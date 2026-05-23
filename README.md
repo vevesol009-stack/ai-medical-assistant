@@ -96,11 +96,6 @@ We welcome contributions! See CONTRIBUTING.md for guidelines.
 
 MIT License - see LICENSE for details.
 
-## 📧 Contact
-
-**Project Lead**: vevesol009@gmail.com  
-**GitHub**: [@vevesol009-stack](https://github.com/vevesol009-stack)
-
 ---
 
 *Built with ❤️ for underserved communities worldwide*
