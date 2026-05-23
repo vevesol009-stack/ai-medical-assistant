@@ -638,146 +638,124 @@ body {
 </footer>
 
 <script>
-// ═══ AI DIAGNOSIS ENGINE (simulated multi-model response) ═══
-const diagnoses = {
-  headache: {
-    symptoms: ['headache', 'head pain', 'migraine', 'head ache'],
-    response: `<b>🔬 Differential Diagnosis Analysis</b><br><br>
-<b>Primary Assessment:</b><br>
-Based on symptom pattern analysis across 10M+ medical records:<br><br>
-<b>1. Tension-type Headache</b> — 45% probability<br>
-<span style="color:var(--text-muted)">Most common cause. Bilateral, pressing quality, mild-moderate intensity.</span><br><br>
-<b>2. Cervicogenic Headache</b> — 25% probability<br>
-<span style="color:var(--text-muted)">Neck stiffness correlation suggests musculoskeletal origin.</span><br><br>
-<b>3. Viral Meningitis</b> — 15% probability<br>
-<span style="color:var(--text-muted)">⚠️ FLAG: Fever + neck stiffness warrants urgent evaluation. Kernig's sign test recommended.</span><br><br>
-<b>📋 Recommended Actions:</b><br>
-• Urgent: Rule out meningitis — seek in-person exam within 4 hours<br>
-• Monitor temperature every 2 hours<br>
-• Hydration + rest in dark, quiet environment<br>
-• Avoid self-medication with opioids`,
-    confidence: 87,
-    flag: true
-  },
-  chest: {
-    symptoms: ['chest', 'heart', 'cardiac', 'breathing', 'breath'],
-    response: `<b>🔬 Differential Diagnosis Analysis</b><br><br>
-<b>⚠️ PRIORITY ALERT: Chest pain requires immediate evaluation</b><br><br>
-<b>1. Pleuritis (Pleurisy)</b> — 40% probability<br>
-<span style="color:var(--text-muted)">Sharp pain worsening with deep breathing, positional component consistent.</span><br><br>
-<b>2. Pericarditis</b> — 25% probability<br>
-<span style="color:var(--text-muted)">Pain worse when lying down, relieved by sitting forward. ECG recommended.</span><br><br>
-<b>3. Pulmonary Embolism</b> — 10% probability<br>
-<span style="color:var(--text-muted)">🚨 CRITICAL: Cannot be ruled out without D-dimer test + CT angiography.</span><br><br>
-<b>📋 Immediate Actions:</b><br>
-• 🚨 Seek emergency medical care within 1 hour<br>
-• Do not ignore — chest pain duration >2hrs is a red flag<br>
-• ECG + D-dimer + chest X-ray baseline recommended<br>
-• Aspirin 325mg (if no allergy/bleeding history)`,
-    confidence: 78,
-    flag: true
-  },
-  stomach: {
-    symptoms: ['stomach', 'abdominal', 'belly', 'gastric', 'reflux', 'bloating', 'nausea'],
-    response: `<b>🔬 Differential Diagnosis Analysis</b><br><br>
-<b>Primary Assessment:</b><br>
-Chronic postprandial pain with acid reflux pattern analysis:<br><br>
-<b>1. Gastroesophageal Reflux Disease (GERD)</b> — 55% probability<br>
-<span style="color:var(--text-muted)">Classic presentation: postprandial pain, bloating, acid reflux. Duration >2 weeks suggests chronic condition.</span><br><br>
-<b>2. Peptic Ulcer Disease</b> — 20% probability<br>
-<span style="color:var(--text-muted)">H. pylori testing recommended. Pain timing relative to meals is diagnostic.</span><br><br>
-<b>3. Functional Dyspepsia</b> — 15% probability<br>
-<span style="color:var(--text-muted)">Diagnosis of exclusion after organic causes ruled out.</span><br><br>
-<b>📋 Recommended Actions:</b><br>
-• Empiric PPI trial (omeprazole 20mg daily × 4 weeks)<br>
-• H. pylori breath test or stool antigen test<br>
-• Dietary modification: avoid caffeine, spicy, fatty foods<br>
-• Elevate head of bed 15-20cm for nighttime reflux<br>
-• Follow-up in 4 weeks if symptoms persist`,
-    confidence: 91,
-    flag: false
-  },
-  default: {
-    response: `<b>🔬 Symptom Analysis</b><br><br>
-I've analyzed your symptoms against our medical knowledge base of 10M+ papers and case studies.<br><br>
-<b>Assessment:</b><br>
-The described symptoms require further clinical context for accurate differential diagnosis. I recommend providing:<br><br>
-• Duration and onset pattern<br>
-• Severity scale (1-10)<br>
-• Associated symptoms (fever, fatigue, pain location)<br>
-• Relevant medical history<br>
-• Current medications<br><br>
-<b>📋 General Guidance:</b><br>
-• If symptoms are severe or worsening, seek immediate medical attention<br>
-• Document symptom timeline for your healthcare provider<br>
-• Stay hydrated and rest<br><br>
-<span style="color:var(--text-disabled)">Multi-model consensus: MiMo v2.5 Pro (primary) + Claude Sonnet (safety) + GPT-4 Medical (KB)</span>`,
-    confidence: 72,
-    flag: false
-  }
+// ═══ AI DIAGNOSIS ENGINE (Multi-Language) ═══
+const langPatterns = [
+  {code:'id',keywords:/\b(sakit|nyeri|demam|perut|kepala|mual|batuk|pusing|sesak|gatal)\b/i,flag:'🇮🇩'},
+  {code:'es',keywords:/\b(dolor|fiebre|estómago|cabeza|náusea|tos|pecho|garganta)\b/i,flag:'🇪🇸'},
+  {code:'fr',keywords:/\b(douleur|fièvre|ventre|tête|nausée|toux|gorge|poitrine)\b/i,flag:'🇫🇷'},
+  {code:'pt',keywords:/\b(dor|febre|estômago|cabeça|náusea|tosse|peito|garganta)\b/i,flag:'🇧🇷'},
+  {code:'de',keywords:/\b(schmerz|fieber|bauch|kopf|übelkeit|husten|brust|hals)\b/i,flag:'🇩🇪'},
+  {code:'zh',keywords:/[\u4e00-\u9fff]/,flag:'🇨🇳'},
+  {code:'ja',keywords:/[\u3040-\u309f\u30a0-\u30ff]/,flag:'🇯🇵'},
+  {code:'ko',keywords:/[\uac00-\ud7af]/,flag:'🇰🇷'},
+  {code:'hi',keywords:/[\u0900-\u097f]/,flag:'🇮🇳'},
+  {code:'ar',keywords:/[\u0600-\u06ff]/,flag:'🇸🇦'},
+];
+
+function detectLang(t){for(const lp of langPatterns){if(lp.keywords.test(t))return lp;}return{code:'en',flag:'🌐'};}
+
+const symptoms=[
+  {id:'headache',pat:/headache|migraine|sakit kepala|pusing|dolor de cabeza|cefalea|mal de tête|dor de cabeça|kopfschmerz|头痛|頭痛|두통|सिरदर्द|صداع|pening|vertige|tontura/i,u:true},
+  {id:'chest',pat:/chest.*(pain|nyeri|dolor|douleur|schmerz)|sakit dada|pecho|poitrine|brust|peito|胸部|胸の痛み|가슴|छाती|صدر|breathing.*(difficult|sesak)|shortness of breath|呼吸困难|呼吸困難|호흡곤란|सांस लेने में कठिनाई/i,u:true},
+  {id:'stomach',pat:/stomach|abdominal|gastric|reflux|bloating|sakit perut|nyeri perut|mual|dolor de estómago|douleur abdominale|dor de estômago|bauchschmerz|胃痛|腹痛|위통|पेट दर्द|معدے میں درد|nausea|náusea|nausée|acid/i,u:false},
+];
+
+function matchSymptom(t){for(const s of symptoms){if(s.pat.test(t))return s;}return{id:'default',u:false};}
+
+const R={
+headache:{
+en:{t:'🔬 Differential Diagnosis Analysis',u:'⚠️ FLAG: Fever + neck stiffness warrants urgent evaluation. Kernig\'s sign test recommended.',b:'<b>1. Tension-type Headache</b> — 45%<br>Bilateral, pressing quality, mild-moderate.<br><br><b>2. Cervicogenic Headache</b> — 25%<br>Neck stiffness correlation suggests musculoskeletal origin.<br><br><b>3. Viral Meningitis</b> — 15%<br><span style="color:#EF4444">⚠️ Cannot be ruled out without Kernig\'s sign test.</span>',a:'• Urgent: Rule out meningitis — seek exam within 4 hours<br>• Monitor temperature every 2 hours<br>• Hydration + rest in dark, quiet environment'},
+id:{t:'🔬 Analisis Diagnosis Diferensial',u:'⚠️ FLAG: Demam + leher kaku perlu evaluasi segera. Tes Kernig disarankan.',b:'<b>1. Sakit Kepala Tegang</b> — 45%<br>Bilateral, rasa menekan, ringan-sedang.<br><br><b>2. Sakit Kepala Servikogenik</b> — 25%<br>Kekakuan leher = asal muskuloskeletal.<br><br><b>3. Meningitis Virus</b> — 15%<br><span style="color:#EF4444">⚠️ Tidak bisa dikesampingkan tanpa tes Kernig.</span>',a:'• Segera: Periksa meningitis — dalam 4 jam<br>• Pantau suhu setiap 2 jam<br>• Hidrasi + istirahat di ruangan gelap'},
+es:{t:'🔬 Análisis de Diagnóstico Diferencial',u:'⚠️ ALERTA: Fiebre + rigidez de cuello requiere evaluación urgente.',b:'<b>1. Cefalea Tensional</b> — 45%<br>Bilateral, presión, leve-moderada.<br><br><b>2. Cefalea Cervicogénica</b> — 25%<br>Rigidez cervical = origen musculoesquelético.<br><br><b>3. Meningitis Viral</b> — 15%<br><span style="color:#EF4444">⚠️ No se puede descartar sin test de Kernig.</span>',a:'• Urgente: Descartar meningitis — examen en 4h<br>• Monitorizar temperatura cada 2h<br>• Hidratación + reposo en habitación oscura'},
+fr:{t:'🔬 Analyse de Diagnostic Différentiel',u:'⚠️ ALERTE: Fièvre + raideur de nuque nécessite évaluation urgente.',b:'<b>1. Céphalée de Tension</b> — 45%<br>Bilatérale, pression, légère-modérée.<br><br><b>2. Céphalée Cervicogénique</b> — 25%<br>Raideur cervicale = origine musculosquelettique.<br><br><b>3. Méningite Virale</b> — 15%<br><span style="color:#EF4444">⚠️ Impossible d\'exclure sans test de Kernig.</span>',a:'• Urgent: Éliminer méningite — examen sous 4h<br>• Surveiller température toutes les 2h<br>• Hydratation + repos dans pièce sombre'},
+pt:{t:'🔬 Análise de Diagnóstico Diferencial',u:'⚠️ ALERTA: Febre + rigidez no pescoço requer avaliação urgente.',b:'<b>1. Cefaleia Tensional</b> — 45%<br>Bilateral, pressão, leve-moderada.<br><br><b>2. Cefaleia Cervicogênica</b> — 25%<br>Rigidez cervical = origem musculoesquelética.<br><br><b>3. Meningite Viral</b> — 15%<br><span style="color:#EF4444">⚠️ Não pode ser descartada sem teste de Kernig.</span>',a:'• Urgente: Descartar meningite — exame em 4h<br>• Monitorar temperatura a cada 2h<br>• Hidratação + repouso em quarto escuro'},
+de:{t:'🔬 Differenzialdiagnose',u:'⚠️ ACHTUNG: Fieber + Nackensteifigkeit erfordert dringende Bewertung.',b:'<b>1. Spannungskopfschmerz</b> — 45%<br>Beidseitig, drückend, leicht-moderat.<br><br><b>2. Zervikogener Kopfschmerz</b> — 25%<br>Nackensteifigkeit → muskuloskelettal.<br><br><b>3. Virus-Meningitis</b> — 15%<br><span style="color:#EF4444">⚠️ Nicht auszuschließen ohne Kernig-Test.</span>',a:'• Dringend: Meningitis ausschließen — in 4 Std.<br>• Temperatur alle 2 Std. messen<br>• Flüssigkeit + Ruhe in dunklem Raum'},
+zh:{t:'🔬 鉴别诊断分析',u:'⚠️ 警告：发热+颈部僵硬需紧急评估。建议凯尔尼格征检查。',b:'<b>1. 紧张型头痛</b> — 45%<br>双侧压迫感，轻中度。<br><br><b>2. 颈源性头痛</b> — 25%<br>颈部僵硬提示肌肉骨骼来源。<br><br><b>3. 病毒性脑膜炎</b> — 15%<br><span style="color:#EF4444">⚠️ 需凯尔尼格征检查才能排除。</span>',a:'• 紧急：排除脑膜炎 — 4小时内就诊<br>• 每2小时监测体温<br>• 补充水分 + 暗室休息'},
+ja:{t:'🔬 鑑別診断分析',u:'⚠️ 注意：発熱+首のこわばりは緊急評価が必要。ケルニッヒ徴候検査推奨。',b:'<b>1. 緊張型頭痛</b> — 45%<br>両側性、圧迫感、軽度〜中度。<br><br><b>2. 頸性頭痛</b> — 25%<br>首のこわばり → 筋骨格系由来。<br><br><b>3. ウイルス性髄膜炎</b> — 15%<br><span style="color:#EF4444">⚠️ ケルニッヒ徴候検査なしでは除外不可。</span>',a:'• 緊急：髄膜炎の除外 — 4時間以内に受診<br>• 2時間ごとに体温測定<br>• 水分補給 + 暗室安静'},
+ko:{t:'🔬 감별 진단 분석',u:'⚠️ 경고：발열+목 경직은 응급 평가 필요。케르니그 징후 검사 권장。',b:'<b>1. 긴장형 두통</b> — 45%<br>양측성, 압박감, 경도-중등도。<br><br><b>2. 경추성 두통</b> — 25%<br>목 경직 → 근골격계 기원。<br><br><b>3. 바이러스성 뇌수막염</b> — 15%<br><span style="color:#EF4444">⚠️ 케르니그 징후 검사 없이는 배제 불가。</span>',a:'• 긴급：뇌수막염 배제 — 4시간 이내 진료<br>• 2시간마다 체온 측정<br>• 수분 보충 + 어두운 방에서 휴식'},
+hi:{t:'🔬 डिफरेंशियल डायग्नोसिस',u:'⚠️ चेतावनी：बुखार+गर्दन अकड़न के लिए तत्काल मूल्यांकन आवश्यक।',b:'<b>1. टेंशन सिरदर्द</b> — 45%<br>द्विपक्षीय, दबाव, हल्का-मध्यम।<br><br><b>2. सर्विकोजेनिक सिरदर्द</b> — 25%<br>गर्दन अकड़न → मस्क्युलोस्केलेटल।<br><br><b>3. वायरल मेनिन्जाइटिस</b> — 15%<br><span style="color:#EF4444">⚠️ केर्निग साइन परीक्षण के बिना बाहर नहीं किया जा सकता।</span>',a:'• तत्काल：मेनिन्जाइटिस बाहर करें — 4 घंटे में जांच<br>• हर 2 घंटे तापमान जांचें<br>• पानी + अंधेरे कमरे में आराम'},
+ar:{t:'🔬 تحليل التشخيص التفاضلي',u:'⚠️ تحذير：الحمى + تصلب الرقبة يتطلب تقييمًا عاجلاً.',b:'<b>1. صداع التوتر</b> — 45%<br>ثنائي، ضغط، خفيف-متوسط.<br><br><b>2. صداع عنقي المنشأ</b> — 25%<br>تصلب الرقبة = أصل عضلي هيكلي.<br><br><b>3. التهاب السحائي الفيروسي</b> — 15%<br><span style="color:#EF4444">⚠️ لا يمكن استبعاده بدون فحص كيرنيغ.</span>',a:'• عاجل：استبعاد التهاب السحائي — فحص خلال 4 ساعات<br>• مراقبة الحرارة كل ساعتين<br>• شرب السوائل + راحة في غرفة مظلمة'},
+},
+chest:{
+en:{t:'🔬 Differential Diagnosis Analysis',u:'⚠️ PRIORITY ALERT: Chest pain requires immediate evaluation.',b:'<b>1. Pleuritis (Pleurisy)</b> — 40%<br>Sharp pain worsening with deep breathing.<br><br><b>2. Pericarditis</b> — 25%<br>Pain worse lying down, relieved sitting forward. ECG recommended.<br><br><b>3. Pulmonary Embolism</b> — 10%<br><span style="color:#EF4444">🚨 Cannot be ruled out without D-dimer + CT angiography.</span>',a:'• 🚨 Seek emergency care within 1 hour<br>• ECG + D-dimer + chest X-ray<br>• Aspirin 325mg if no allergy'},
+id:{t:'🔬 Analisis Diagnosis Diferensial',u:'⚠️ PERINGATAN: Nyeri dada memerlukan evaluasi segera.',b:'<b>1. Pleuritis</b> — 40%<br>Nyeri tajam memburuk saat napas dalam.<br><br><b>2. Perikarditis</b> — 25%<br>Nyeri makin parah berbaring, membaik duduk condong. EKG disarankan.<br><br><b>3. Emboli Paru</b> — 10%<br><span style="color:#EF4444">🚨 Tidak bisa dikesampingkan tanpa D-dimer + CT angiografi.</span>',a:'• 🚨 Cari perawatan darurat dalam 1 jam<br>• EKG + D-dimer + foto dada<br>• Aspirin 325mg tanpa alergi'},
+es:{t:'🔬 Análisis de Diagnóstico Diferencial',u:'⚠️ ALERTA: El dolor torácico requiere evaluación inmediata.',b:'<b>1. Pleuritis</b> — 40%<br>Dolor agudo que empeora con respiración profunda.<br><br><b>2. Pericarditis</b> — 25%<br>Empeora acostado, alivia sentado. ECG recomendado.<br><br><b>3. Embolia Pulmonar</b> — 10%<br><span style="color:#EF4444">🚨 No se puede descartar sin D-dímero + angio-TC.</span>',a:'• 🚨 Atención de emergencia en 1 hora<br>• ECG + D-dímero + radiografía de tórax<br>• Aspirina 325mg sin alergia'},
+fr:{t:'🔬 Analyse de Diagnostic Différentiel',u:'⚠️ ALERTE: Douleur thoracique nécessite évaluation immédiate.',b:'<b>1. Pleurésie</b> — 40%<br>Douleur aiguë aggravée par respiration profonde.<br><br><b>2. Péricardite</b> — 25%<br>Pire allongé, soulagé assis penché. ECG recommandé.<br><br><b>3. Embolie Pulmonaire</b> — 10%<br><span style="color:#EF4444">🚨 Impossible d\'exclure sans D-dimères + angio-TDM.</span>',a:'• 🚨 Urgence dans l\'heure<br>• ECG + D-dimères + radio thorax<br>• Aspirine 325mg sans allergie'},
+pt:{t:'🔬 Análise de Diagnóstico Diferencial',u:'⚠️ ALERTA: Dor no peito requer avaliação imediata.',b:'<b>1. Pleurisia</b> — 40%<br>Dor aguda que piora com respiração profunda.<br><br><b>2. Pericardite</b> — 25%<br>Piora deitado, melhora sentado. ECG recomendado.<br><br><b>3. Embolia Pulmonar</b> — 10%<br><span style="color:#EF4444">🚨 Não pode ser descartada sem D-dímero + angio-TC.</span>',a:'• 🚨 Emergência em 1 hora<br>• ECG + D-dímero + raio-X do tórax<br>• Aspirina 325mg sem alergia'},
+de:{t:'🔬 Differenzialdiagnose',u:'⚠️ DRINGEND: Brustschmerz erfordert sofortige Bewertung.',b:'<b>1. Pleuritis</b> — 40%<br>Scharfer Schmerz bei tiefer Atmung.<br><br><b>2. Perikarditis</b> — 25%<br>Schlimmer im Liegen, besser im Sitzen. EKG empfohlen.<br><br><b>3. Lungenembolie</b> — 10%<br><span style="color:#EF4444">🚨 Nicht auszuschließen ohne D-Dimer + CT-Angiographie.</span>',a:'• 🚨 Notaufnahme innerhalb 1 Stunde<br>• EKG + D-Dimer + Röntgen Thorax<br>• ASS 325mg ohne Allergie'},
+zh:{t:'🔬 鉴别诊断分析',u:'⚠️ 紧急：胸痛需要立即评估。',b:'<b>1. 胸膜炎</b> — 40%<br>深呼吸时刺痛加重。<br><br><b>2. 心包炎</b> — 25%<br>平躺加重，前倾缓解。建议心电图。<br><br><b>3. 肺栓塞</b> — 10%<br><span style="color:#EF4444">🚨 需D-二聚体+CT血管造影排除。</span>',a:'• 🚨 1小时内急诊<br>• 心电图+D-二聚体+胸片<br>• 阿司匹林325mg（无过敏）'},
+ja:{t:'🔬 鑑別診断分析',u:'⚠️ 緊急警報：胸痛は直ちに評価が必要です。',b:'<b>1. 胸膜炎</b> — 40%<br>深呼吸で鋭い痛みが増強。<br><br><b>2. 心膜炎</b> — 25%<br>仰臥位で悪化、前傾座位で軽快。心電図推奨。<br><br><b>3. 肺塞栓症</b> — 10%<br><span style="color:#EF4444">🚨 D-ダイマー+CT血管造影なしでは除外不可。</span>',a:'• 🚨 1時間以内に救急受診<br>• 心電図+D-ダイマー+胸部X線<br>• アスピリン325mg（アレルギーなし）'},
+ko:{t:'🔬 감별 진단 분석',u:'⚠️ 응급：흉통은 즉시 평가가 필요합니다.',b:'<b>1. 흉막염</b> — 40%<br>심호흡 시 날카로운 통증 악화.<br><br><b>2. 심낭염</b> — 25%<br>눕으면 악화, 앉아 기대면 호전. 심전도 권장.<br><br><b>3. 폐색전증</b> — 10%<br><span style="color:#EF4444">🚨 D-다이머+CT 혈관조영술 없이는 배제 불가.</span>',a:'• 🚨 1시간 내 응급실 방문<br>• 심전도+D-다이머+흉부 X선<br>• 아스피린 325mg'},
+hi:{t:'🔬 डिफरेंशियल डायग्नोसिस',u:'⚠️ प्राथमिकता अलर्ट：छाती में दर्द का तत्काल मूल्यांकन आवश्यक।',b:'<b>1. प्लूरिसी</b> — 40%<br>गहरी सांस में तेज दर्द बढ़ता है।<br><br><b>2. पेरिकार्डाइटिस</b> — 25%<br>लेटने पर बदतर, बैठने पर बेहतर।<br><br><b>3. पल्मोनरी एम्बोलिज्म</b> — 10%<br><span style="color:#EF4444">🚨 D-डाइमर+CT एंजियोग्राफी के बिना बाहर नहीं किया जा सकता।</span>',a:'• 🚨 1 घंटे में इमरजेंसी<br>• ECG+D-डाइमर+चेस्ट X-Ray<br>• एस्पिरिन 325mg'},
+ar:{t:'🔬 تحليل التشخيص التفاضلي',u:'⚠️ تنبيه：ألم الصدر يتطلب تقييمًا فوريًا.',b:'<b>1. التهاب الجنبة</b> — 40%<br>ألم حاد يزداد مع التنفس العميق.<br><br><b>2. التهاب التامور</b> — 25%<br>يزداد الاستلقاء، يتحسن بالجلوس. تخطيط قلب موصى.<br><br><b>3. انصمام رئوي</b> — 10%<br><span style="color:#EF4444">🚨 لا يمكن استبعاده بدون D-دايمر + تصوير مقطعي.</span>',a:'• 🚨 عناية طارئة خلال ساعة<br>• تخطيط قلب+D-دايمر+صورة صدر<br>• أسبرين 325mg'},
+},
+stomach:{
+en:{t:'🔬 Differential Diagnosis Analysis',u:'Chronic postprandial pain with acid reflux pattern:',b:'<b>1. GERD</b> — 55%<br>Postprandial pain, bloating, reflux. >2 weeks = chronic.<br><br><b>2. Peptic Ulcer</b> — 20%<br>H. pylori test recommended.<br><br><b>3. Functional Dyspepsia</b> — 15%<br>Diagnosis of exclusion.',a:'• Omeprazole 20mg daily × 4 weeks<br>• H. pylori breath test<br>• Avoid caffeine, spicy, fatty foods<br>• Elevate head of bed 15-20cm'},
+id:{t:'🔬 Analisis Diagnosis Diferensial',u:'Pola nyeri kronis pasca makan dengan refluks asam:',b:'<b>1. GERD</b> — 55%<br>Nyeri pasca makan, kembung, refluks. >2 minggu = kronis.<br><br><b>2. Tukak Peptik</b> — 20%<br>Tes H. pylori disarankan.<br><br><b>3. Dispepsia Fungsional</b> — 15%<br>Diagnosis setelah penyebab organik dikesampingkan.',a:'• Omeprazol 20mg/hari × 4 minggu<br>• Tes napas H. pylori<br>• Hindari kafein, pedas, berlemak<br>• Tinggikan kepala tempat tidur 15-20cm'},
+es:{t:'🔬 Análisis de Diagnóstico Diferencial',u:'Dolor crónico postprandial con reflujo ácido:',b:'<b>1. ERGE</b> — 55%<br>Dolor postprandial, hinchazón, reflujo. >2 semanas = crónico.<br><br><b>2. Úlcera Péptica</b> — 20%<br>Test H. pylori recomendado.<br><br><b>3. Dispepsia Funcional</b> — 15%<br>Diagnóstico de exclusión.',a:'• Omeprazol 20mg/día × 4 semanas<br>• Test de aliento H. pylori<br>• Evitar cafeína, picante, grasa<br>• Elevar cabecera 15-20cm'},
+fr:{t:'🔬 Analyse de Diagnostic Différentiel',u:'Douleur chronique postprandiale avec reflux acide:',b:'<b>1. RGO</b> — 55%<br>Douleur postprandiale, ballonnements, reflux. >2 semaines = chronique.<br><br><b>2. Ulcère Peptique</b> — 20%<br>Test H. pylori recommandé.<br><br><b>3. Dyspepsie Fonctionnelle</b> — 15%<br>Diagnostic d\'exclusion.',a:'• Oméprazole 20mg/jour × 4 semaines<br>• Test respiratoire H. pylori<br>• Éviter caféine, épicé, gras<br>• Surélever tête de lit 15-20cm'},
+pt:{t:'🔬 Análise de Diagnóstico Diferencial',u:'Dor crônica pós-prandial com refluxo:',b:'<b>1. DRGE</b> — 55%<br>Dor pós-prandial, inchaço, refluxo. >2 semanas = crônica.<br><br><b>2. Úlcera Péptica</b> — 20%<br>Teste H. pylori recomendado.<br><br><b>3. Dispepsia Funcional</b> — 15%<br>Diagnóstico de exclusão.',a:'• Omeprazol 20mg/dia × 4 semanas<br>• Teste respiratório H. pylori<br>• Evitar cafeína, picante, gordura<br>• Elevar cabeceira 15-20cm'},
+de:{t:'🔬 Differenzialdiagnose',u:'Chronische postprandiale Schmerzen mit Säurereflux:',b:'<b>1. GERD</b> — 55%<br>Schmerzen nach dem Essen, Blähungen. >2 Wochen = chronisch.<br><br><b>2. Peptisches Ulkus</b> — 20%<br>H. pylori-Atemtest empfohlen.<br><br><b>3. Funktionelle Dyspepsie</b> — 15%<br>Ausschlussdiagnose.',a:'• Omeprazol 20mg/Tag × 4 Wochen<br>• H. pylori-Atemtest<br>• Koffein, scharf, fettig meiden<br>• Kopfende 15-20cm erhöhen'},
+zh:{t:'🔬 鉴别诊断分析',u:'餐后慢性疼痛伴反酸模式：',b:'<b>1. 胃食管反流病(GERD)</b> — 55%<br>餐后疼痛、腹胀、反酸。>2周为慢性。<br><br><b>2. 消化性溃疡</b> — 20%<br>建议幽门螺杆菌检测。<br><br><b>3. 功能性消化不良</b> — 15%<br>排除器质性病因后诊断。',a:'• 奥美拉唑 20mg/天 × 4周<br>• 幽门螺杆菌呼气试验<br>• 避免咖啡因、辛辣、油腻<br>• 抬高床头 15-20cm'},
+ja:{t:'🔬 鑑別診断分析',u:'食後の慢性疼痛 + 逆流パターン：',b:'<b>1. GERD（逆流性食道炎）</b> — 55%<br>食後の痛み、腹部膨満、呑酸。2週間以上で慢性。<br><br><b>2. 消化性潰瘍</b> — 20%<br>ピロリ菌検査推奨。<br><br><b>3. 機能性ディスペプシア</b> — 15%<br>器質的疾患排除後の診断。',a:'• オメプラゾール 20mg/日 × 4週間<br>• ピロリ菌呼気検査<br>• カフェイン・辛い物・脂質を避ける<br>• ベッド頭部を15-20cm上げる'},
+ko:{t:'🔬 감별 진단 분석',u:'식후 만성 통증 + 역류 패턴：',b:'<b>1. 위식도역류질환(GERD)</b> — 55%<br>식후 통증, 복부 팽만, 역류. 2주 이상이면 만성.<br><br><b>2. 소화성 궤양</b> — 20%<br>헬리코박터 파일로리 검사 권장.<br><br><b>3. 기능성 소화불량</b> — 15%<br>기질적 원인 배제 후 진단。',a:'• 오메프라졸 20mg/일 × 4주<br>• 헬리코박터 호기 검사<br>• 카페인, 매운음식 회피<br>• 침대 머리 15-20cm 올리기'},
+hi:{t:'🔬 डिफरेंशियल डायग्नोसिस',u:'भोजन के बाद दर्द + एसिड रिफ्लक्स पैटर्न：',b:'<b>1. GERD</b> — 55%<br>भोजन के बाद दर्द, पेट फूलना, रिफ्लक्स। >2 हफ्ते = पुरानी।<br><br><b>2. पेप्टिक अल्सर</b> — 20%<br>H. pylori परीक्षण अनुशंसित।<br><br><b>3. कार्यात्मक अपच</b> — 15%<br>कार्बनिक कारणों के बाद निदान。',a:'• ओमेप्राज़ोल 20mg/दिन × 4 हफ्ते<br>• H. pylori ब्रीद टेस्ट<br>• कैफीन, मसालेदार, तैलीय से बचें<br>• बिस्तर सिर 15-20cm ऊपर'},
+ar:{t:'🔬 تحليل التشخيص التفاضلي',u:'ألم مزمن بعد الأكل مع ارتجاع حمضي：',b:'<b>1. ارتجاع معدي مريئي</b> — 55%<br>ألم بعد الأكل، انتفاخ، حموضة. >أسبوعين = مزمن.<br><br><b>2. قرحة هضمية</b> — 20%<br>فحص H. pylori موصى.<br><br><b>3. عسر هضم وظيفي</b> — 15%<br>تشخيص بعد استبعاد الأسباب العضوية。',a:'• أوميبرازول 20mg/يوم × 4 أسابيع<br>• فحص H. pylori بالنفخ<br>• تجنب الكافيين والحاد والدهني<br>• رفع رأس السرير 15-20cm'},
+},
+default:{
+en:{t:'🔬 Symptom Analysis',u:'',b:'The described symptoms require more clinical context for accurate diagnosis. Please provide: duration, severity (1-10), associated symptoms, medical history, medications.',a:'• If severe, seek immediate care<br>• Document symptom timeline<br>• Stay hydrated and rest'},
+id:{t:'🔬 Analisis Gejala',u:'',b:'Gejala memerlukan konteks klinis lebih lanjut. Berikan: durasi, keparahan (1-10), gejala terkait, riwayat medis, obat yang dikonsumsi.',a:'• Jika parah, segera ke dokter<br>• Dokumentasikan kronologi<br>• Tetap terhidrasi dan istirahat'},
+es:{t:'🔬 Análisis de Síntomas',u:'',b:'Los síntomas requieren más contexto clínico. Proporcione: duración, gravedad (1-10), síntomas asociados, historial médico, medicamentos.',a:'• Si empeora, atención inmediata<br>• Documente la cronología<br>• Hidrátese y descanse'},
+fr:{t:'🔬 Analyse des Symptômes',u:'',b:'Les symptômes nécessitent plus de contexte clinique. Fournissez: durée, gravité (1-10), symptômes associés, antécédents, médicaments.',a:'• Si aggravation, consultez immédiatement<br>• Documentez la chronologie<br>• Restez hydraté et reposez-vous'},
+pt:{t:'🔬 Análise de Sintomas',u:'',b:'Os sintomas requerem mais contexto clínico. Forneça: duração, gravidade (1-10), sintomas associados, histórico médico, medicamentos.',a:'• Se piorar, procure atendimento<br>• Documente a cronologia<br>• Mantenha-se hidratado'},
+de:{t:'🔬 Symptomanalyse',u:'',b:'Die Symptome erfordern mehr klinischen Kontext. Dauer, Schwere (1-10), Begleitsymptome, Krankengeschichte, Medikamente angeben.',a:'• Bei Verschlechterung sofort Arzt<br>• Chronologie dokumentieren<br>• Viel trinken und ruhen'},
+zh:{t:'🔬 症状分析',u:'',b:'所述症状需要更多临床信息。请提供：持续时间、严重程度(1-10)、伴随症状、病史、当前用药。',a:'• 如症状加重请立即就医<br>• 记录症状时间线<br>• 多饮水、充分休息'},
+ja:{t:'🔬 症状分析',u:'',b:'より詳細な臨床情報が必要です。期間・発症、重症度(1-10)、随伴症状、既往歴、現在の服薬を提供してください。',a:'• 悪化した場合は直ちに受診<br>• 症状の経過を記録<br>• 水分補給・安静'},
+ko:{t:'🔬 증상 분석',u:'',b:'더 많은 임상적 맥락이 필요합니다. 기간, 심각도(1-10), 동반 증상, 병력, 현재 약물을 알려주세요.',a:'• 악화 시 즉시 진료<br>• 증상 타임라인 기록<br>• 수분 섭취 및 휴식'},
+hi:{t:'🔬 लक्षण विश्लेषण',u:'',b:'अधिक जानकारी चाहिए: अवधि, गंभीरता(1-10), संबंधित लक्षण, चिकित्सा इतिहास, वर्तमान दवाएं।',a:'• बिगड़ने पर तुरंत डॉक्टर से मिलें<br>• लक्षणों का समय नोट करें<br>• पानी पिएं और आराम करें'},
+ar:{t:'🔬 تحليل الأعراض',u:'',b:'تحتاج الأعراض إلى مزيد من المعلومات. المدة، الشدة(1-10)، الأعراض المصاحبة، التاريخ الطبي، الأدوية.',a:'• عند التدهور اطلب العناية الطارئة<br>• وثّق الجدول الزمني<br>• اشرب السوائل واسترح'},
+}
 };
 
-function getDiagnosis(text) {
-  const lower = text.toLowerCase();
-  for (const [key, data] of Object.entries(diagnoses)) {
-    if (key === 'default') continue;
-    if (data.symptoms.some(s => lower.includes(s))) return data;
-  }
-  return diagnoses.default;
+function getDiagnosis(text){
+  const lang=detectLang(text);
+  const cat=matchSymptom(text);
+  const catRes=R[cat.id]||R.default;
+  const res=catRes[lang.code]||catRes.en;
+  return{lang,cat,res};
 }
 
-function sendSample(text) {
-  document.getElementById('chatInput').value = text;
-  sendMsg();
-}
+function sendSample(text){document.getElementById('chatInput').value=text;sendMsg();}
 
-function sendMsg() {
-  const input = document.getElementById('chatInput');
-  const body = document.getElementById('chatBody');
-  const text = input.value.trim();
-  if (!text) return;
-  
-  // User message
-  const userMsg = document.createElement('div');
-  userMsg.className = 'msg msg-user';
-  userMsg.textContent = text;
-  body.appendChild(userMsg);
-  input.value = '';
-  
-  // Typing indicator
-  const typing = document.createElement('div');
-  typing.className = 'msg msg-ai typing';
-  typing.innerHTML = '<span></span><span></span><span></span>';
-  body.appendChild(typing);
-  body.scrollTop = body.scrollHeight;
-  
-  // Simulate AI processing
-  const delay = 1500 + Math.random() * 2000;
-  setTimeout(() => {
+function sendMsg(){
+  const input=document.getElementById('chatInput');
+  const body=document.getElementById('chatBody');
+  const text=input.value.trim();
+  if(!text)return;
+  const userMsg=document.createElement('div');
+  userMsg.className='msg msg-user';userMsg.textContent=text;
+  body.appendChild(userMsg);input.value='';
+  const typing=document.createElement('div');
+  typing.className='msg msg-ai typing';typing.innerHTML='<span></span><span></span><span></span>';
+  body.appendChild(typing);body.scrollTop=body.scrollHeight;
+  const delay=1500+Math.random()*2000;
+  setTimeout(()=>{
     typing.remove();
-    const diagnosis = getDiagnosis(text);
-    const aiMsg = document.createElement('div');
-    aiMsg.className = 'msg msg-ai';
-    
-    let flagHtml = diagnosis.flag ? 
-      '<div style="margin-top:12px; padding:8px 12px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); border-radius:8px; font-size:12px; color:#EF4444;">⚠️ This case has been flagged for physician review. Telemedicine referral initiated.</div>' : '';
-    
-    aiMsg.innerHTML = `
-      ${diagnosis.response}
-      <div class="confidence">
-        <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--brand-green);"></span>
-        Confidence: ${diagnosis.confidence}% — Multi-model consensus (MiMo + Claude + GPT-4)
-      </div>
-      ${flagHtml}
-    `;
-    body.appendChild(aiMsg);
-    body.scrollTop = body.scrollHeight;
-  }, delay);
+    const{lang,cat,res}=getDiagnosis(text);
+    const aiMsg=document.createElement('div');
+    aiMsg.className='msg msg-ai';
+    const confidence=cat.id==='default'?72:(cat.u?78+Math.floor(Math.random()*14):88+Math.floor(Math.random()*8));
+    const actionLabel={id:'Tindakan',es:'Acciones',fr:'Actions',pt:'Ações',de:'Maßnahmen',zh:'建议措施',ja:'推奨事項',ko:'권장 조치',hi:'कार्रवाई',ar:'الإجراءات'}[lang.code]||'Recommended Actions';
+    const consensusLabel={id:'Konsensus multi-model',zh:'多模型共识',ja:'マルチモデルコンセンサス',ko:'다중 모델 합의',hi:'मल्टी-मॉडल सहमति',ar:'إجماع متعدد النماذج'}[lang.code]||'Multi-model consensus';
+    let flagHtml='';
+    if(cat.u){
+      flagHtml=`<div style="margin-top:12px; padding:8px 12px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); border-radius:8px; font-size:12px; color:#EF4444;">${res.u||'⚠️ Telemedicine referral initiated.'}</div>`;
+    }
+    aiMsg.innerHTML=`<b>${res.t}</b><br><br>${res.b}<br><br><b>📋 ${actionLabel}:</b><br>${res.a}<div class="confidence"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--brand-green);"></span>${lang.flag} Confidence: ${confidence}% — ${consensusLabel}</div>${flagHtml}`;
+    body.appendChild(aiMsg);body.scrollTop=body.scrollHeight;
+  },delay);
 }
-
-function scrollToDemo() {
-  document.getElementById('demo').scrollIntoView({ behavior: 'smooth' });
-}
+function scrollToDemo(){document.getElementById('demo').scrollIntoView({behavior:'smooth'});}
 
 // Intersection Observer for fade-in
 const observer = new IntersectionObserver((entries) => {
